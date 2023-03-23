@@ -159,6 +159,7 @@ setenv CTM_HGBIDI N          #> mercury bi-directional flux for in-line depositi
 setenv CTM_SFC_HONO Y        #> surface HONO interaction [ default: Y ]
 setenv CTM_GRAV_SETL Y       #> vdiff aerosol gravitational sedimentation [ default: Y ]
 setenv CTM_BIOGEMIS Y        #> calculate in-line biogenic emissions [ default: N ]
+setenv CTM_CANOPY_SHADE N    #> canopy photolysis and eddy effects [ default: N ]
 
 #> Vertical Extraction Options
 setenv VERTEXT N
