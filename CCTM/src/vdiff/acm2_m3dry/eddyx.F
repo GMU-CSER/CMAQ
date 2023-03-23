@@ -41,7 +41,7 @@ C  JOB       11/14 - Updated for the ASX_DATA_MOD shared data module which
 C                    included variables in the VDIFF_MET module.
 C  HF        07/15 - Included pleim5 formulation. 
 C  David Wong 02/19 - removed all MY_N clauses
-C  P. C. Campbell 03/23   - Added canopy turbulence effects              
+C  P. C. Campbell 03/23   - Added canopy effects              
 C--------------------------------------------------------------------------
 
       USE GRID_CONF             ! horizontal domain specifications
