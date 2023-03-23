@@ -63,6 +63,7 @@ C                         related to ZSTATIC
 C     05 June 2019 F. Sidi: Bugfix related to Parallel I/O Implementation
 C     05 Aug  2019 D. Wong: Removed USE BMATVEC_MODULE statement and PTBILIIN
 C     19 Sep  2019 D. Wong: Fixed the way to advance to next day on an emission file, EM_FILE_DATE
+C     07 Jun  2020 Y. Li & Q. Tong: Add Sofiev 2012 plume rise scheme.
 C-----------------------------------------------------------------------
 
       USE UDTYPES, ONLY: RARRY1
@@ -843,7 +844,10 @@ C Includes:
 
       INTEGER :: S, L, SRC
       INTEGER :: LTOP, LACRESBURNED
-
+C ++ FIRE PLUME RISE OPTION ++
+      CHARACTER(  1 ) ::     PLMRISE_OPT   
+C PlumeRise option (1-Briggs; 2-Sofiev)
+C -- lyy & qt 2020.06
       INTERFACE
            SUBROUTINE PREPLM( FIREFLG, EMLAYS, HMIX, HTS, PSFC, TS, DDZF, QV,
      &                        TA, UW, VW, ZH, ZF, PRES, LSTK, LPBL, TSTK,
@@ -920,19 +924,66 @@ C Includes:
              REAL,    INTENT( OUT ) :: PLTOP
              REAL,    INTENT( OUT ) :: PLBOT
            END SUBROUTINE PLSPRD
+
+C ++ FIRE PLUME RISE OPTION SOFIEV ++ 
+           SUBROUTINE plumeRiseSofiev( EMLAYS, TA, PRES, ZH,
+     &                                 BFLUX, LPBL, ZPLM)
+             INTEGER, INTENT( IN )  :: EMLAYS
+             REAL,    INTENT( IN )  :: TA   ( : )
+             REAL,    INTENT( IN )  :: PRES ( : )
+             REAL,    INTENT( IN )  :: ZH   ( : )
+             REAL,    INTENT( IN )  :: BFLUX
+             INTEGER,    INTENT( IN )  :: LPBL
+             REAL,    INTENT( OUT )  :: ZPLM
+           END SUBROUTINE plumeRiseSofiev
+C -- lyy & qt 2020.06
+c ++ FIRE PLUME RISE OPTION FREITAS ++
+           SUBROUTINE plumeRiseFreitas( M1, AREA_IN, UP, VP,
+     &                                  TA,PRES,RV,ZT_RAMS,ZM_RAMS,
+     &                                  BFLUX_in, ZPLM)
+           INTEGER, INTENT( IN )  :: M1
+             REAL,    INTENT( IN ),dimension(m1) :: TA
+             REAL,    INTENT( IN ),dimension(m1) :: PRES
+             REAL,    INTENT( IN ),dimension(m1)  :: ZT_RAMS
+             REAL,    INTENT( IN ),dimension(m1)  :: ZM_RAMS
+             REAL,    INTENT( IN ),dimension(m1)  :: UP
+             REAL,    INTENT( IN ),dimension(m1)  :: VP
+             REAL,    INTENT( IN ),dimension(m1)  :: RV
+             REAL,    INTENT( IN )  :: BFLUX_in
+             REAL,    INTENT( IN )  :: AREA_IN
+             REAL,    INTENT( OUT )  :: ZPLM
+           END SUBROUTINE plumeRiseFreitas
        END INTERFACE
       
       ! If The Point File is for Fires, read and save the H-Flux Data in a
       ! Dedicated Variable, BFLUX
       LACRESBURNED = 0
       IF ( FIREFLAG( N ) ) THEN
-         call interpolate_var (STKENAME(N), 'HFLUX', LOC_STKDATE, JTIME, FIREVAR(N)%ARRY)
+C ++ FIRE PLUME RISE OPTION ++ 
+         PLMRISE_OPT = '1'
+         call getenv('PLMRISE_OPT',PLMRISE_OPT)
 
-         DO S = 1, MY_NSRC( N )
-            SRC = SOURCE( N )%ARRY( S )
-            BFLUX( N )%ARRY( S ) = FIREVAR( N )%ARRY( SRC ) * BTU2M4PS3
-         END DO
+         IF (PLMRISE_OPT == '1') THEN
+C Briggs
+            call interpolate_var (STKENAME(N), 'FRP', LOC_STKDATE, JTIME, FIREVAR(N)%ARRY)
 
+            DO S = 1, MY_NSRC( N )
+               SRC = SOURCE( N )%ARRY( S )
+C convert MW to BTU/s 1mw=947.82 btu/s
+C convert BTU/s to m**4/s**3
+               BFLUX(N)%ARRY(S)=FIREVAR(N)%ARRY(SRC)*947.82*BTU2M4PS3*10
+            END DO
+         ELSE
+C IF (PLMRISE_OPT == '2') THEN
+C Sofiev 2012
+            call interpolate_var (STKENAME(N), 'FRP', LOC_STKDATE,JTIME, FIREVAR(N)%ARRY)
+
+            DO S = 1, MY_NSRC( N )
+               SRC = SOURCE( N )%ARRY( S )
+               BFLUX( N )%ARRY( S ) = FIREVAR( N )%ARRY( SRC )*1e6
+            END DO
+         END IF
+C -- lyy & qt 2020.06
          !Initialize negative ACRES-BURNED counter
       END IF
  
@@ -987,12 +1038,31 @@ C Convert heat flux (watts/m2 to m K /s )
      &                   P_D( N )%ZH( :,S ), P_D( N )%ZSTK( :,S ),
      &                   WSTK, ZPLM )
          ELSE
-            CALL FIRE_PLMRIS( EMLAYS, LSTK, HFLX, P_D( N )%HMIX( S ),
-     &                   BFLUX( N )%ARRY( S ),
-     &                   TSTK, USTMP,
-     &                   P_D( N )%DTHDZ,     P_D( N )%TA( :,S ),
-     &                   P_D( N )%WSPD,      P_D( N )%ZZF,
-     &                   WSTK, ZPLM )
+C ++ FIRE PLUME RISE OPTION ++ 
+            IF (PLMRISE_OPT == '1') THEN
+C Briggs
+               CALL FIRE_PLMRIS( EMLAYS, LSTK, HFLX, P_D( N )%HMIX( S ),
+     &                       BFLUX( N )%ARRY( S ),
+     &                       TSTK, USTMP,
+     &                       P_D( N )%DTHDZ,     P_D( N )%TA( :,S ),
+     &                       P_D( N )%WSPD,      P_D( N )%ZZF,
+     &                       WSTK, ZPLM )
+            ELSE IF (PLMRISE_OPT == '2') THEN
+               CALL plumeRiseSofiev( EMLAYS, P_D( N )%TA( :,S ),
+     &                       P_D( N )%PRES( :,S ), P_D( N )%ZH( :,S ),
+     &                       BFLUX( N )%ARRY( S ), LPBL, ZPLM)
+C --lyy & qt 2020.06
+C ++ FREITAS SCHEME ++
+            ELSE IF (PLMRISE_OPT == '3') THEN
+               CALL plumeRiseFreitas( EMLAYS, ACRES( N )%ARRY(S),
+     &                     P_D( N )%UWIND( :,S ), P_D( N )%VWIND( :,S ),
+     &                     P_D( N )%TA( :,S ), P_D( N )%PRES( :,S ),
+     &                     P_D( N )%QV( :,S ), P_D( N )%ZH( :,S ),
+     &                     P_D( N )%ZF( :,S ),
+     &                     BFLUX( N )%ARRY( S ), ZPLM)
+            END IF
+            print *,'lyy zplm',JDATE,JTIME,ZPLM
+C --lyy & qt 2021.07
          END IF
 
 #ifdef Verbose1
