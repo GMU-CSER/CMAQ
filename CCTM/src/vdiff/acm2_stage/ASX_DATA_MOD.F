@@ -120,6 +120,16 @@ C-------------------------------------------------------------------------------
          Real,    Allocatable :: PBL      ( :,: )  ! pbl height (m)
          Real,    Allocatable :: NACL_EMIS( :,: )  ! NACL mass emission rate of particles with d <10 um (g/m2/s)
          Real,    Allocatable :: COSZEN   ( :,: )  ! Cosine of the zenith angle
+!> Inline Canopy Processes
+         Real,    Allocatable :: FCH      ( :,: )  ! Forest Canopy Height (m)
+         Real,    Allocatable :: FRT      ( :,: )  ! Forest Fraction
+         Real,    Allocatable :: CLU      ( :,: )  ! Clumping Index
+         Real,    Allocatable :: POPU     ( :,: )  ! Population Density (people/10km2)
+         Real,    Allocatable :: LAIE     ( :,: )  ! ECCC LAI (m2/m2)
+         Real,    Allocatable :: C1R      ( :,: )  ! cumulative LAI fraction hc to 0.75 * hc 
+         Real,    Allocatable :: C2R      ( :,: )  ! cumulative LAI fraction hc to 0.50 * hc
+         Real,    Allocatable :: C3R      ( :,: )  ! cumulative LAI fraction hc to 0.35 * hc
+         Real,    Allocatable :: C4R      ( :,: )  ! cumulative LAI fraction hc to 0.20 * hc
 !> U and V wind components on the cross grid points
          Real,    Allocatable :: UWIND    ( :,:,: )  ! [m/s]
          Real,    Allocatable :: VWIND    ( :,:,: )  ! [m/s]                    
@@ -421,6 +431,23 @@ C-----------------------------------------------------------------------
          Mosaic_Data%NAME    = name_lu
          Mosaic_Data%LU_Type = cat_lu     
 
+         If ( CANOPY_SHADE  ) Then
+            ALLOCATE( Met_Data%FCH    ( NCOLS,NROWS ),
+     &                Met_Data%FRT    ( NCOLS,NROWS ),
+     &                Met_Data%CLU    ( NCOLS,NROWS ),
+     &                Met_Data%POPU   ( NCOLS,NROWS ),
+     &                Met_Data%LAIE   ( NCOLS,NROWS ),
+     &                Met_Data%C1R    ( NCOLS,NROWS ), 
+     &                Met_Data%C2R    ( NCOLS,NROWS ),                 
+     &                Met_Data%C3R    ( NCOLS,NROWS ),
+     &                Met_Data%C4R    ( NCOLS,NROWS ),
+     &                STAT = ALLOCSTAT )
+            If ( ALLOCSTAT .Ne. 0 ) Then
+               XMSG = 'Failure allocating Canopy Shade variables'
+               Call M3EXIT( PNAME, JDATE, JTIME, XMSG, XSTAT1 )
+            End If
+         End If
+
 !> ccccccccccccccccccccc enable backward compatiblity ccccccccccccccccccccc
 
          IF (RCA_AVAIL) THEN
@@ -655,6 +682,27 @@ C Vegetation and surface vars
          call interpolate_var ('VEG', jdate, jtime, Met_Data%VEG)
 
          call interpolate_var ('ZRUF', jdate, jtime, Met_Data%Z0)
+
+C Canopy vars
+         If ( CANOPY_SHADE ) Then
+            call interpolate_var ('FCH', jdate, jtime, Met_Data%FCH)
+
+            call interpolate_var ('FRT', jdate, jtime, Met_Data%FRT)
+
+            call interpolate_var ('CLU', jdate, jtime, Met_Data%CLU)
+
+            call interpolate_var ('POPU', jdate, jtime, Met_Data%POPU)
+        
+            call interpolate_var ('LAIE', jdate, jtime, Met_Data%LAIE)
+
+            call interpolate_var ('C1R', jdate, jtime, Met_Data%C1R)
+
+            call interpolate_var ('C2R', jdate, jtime, Met_Data%C2R)
+
+            call interpolate_var ('C3R', jdate, jtime, Met_Data%C3R)
+
+            call interpolate_var ('C4R', jdate, jtime, Met_Data%C4R)
+         End If
 
 C Soil vars
          call interpolate_var ('SOIM1', jdate, jtime, Met_Data%SOIM1)
