@@ -229,7 +229,7 @@
      &             MEDC_AVAIL,              ! file INIT_MEDC_1 is available
      &             E2C_CHEM_AVAIL,          ! file E2C_CHEM is available
      &             GMN_AVAIL,               ! variable GMN exist or not
-     &             LUCRO_AVAIL              ! file LUFRAC_CRO is available
+     &             LUCRO_AVAIL,             ! file LUFRAC_CRO is available
      &             L1_SW_AVAIL              ! variable L1_SW_AVAIL exist or not (NAQFC)   
 
 ! Met data is large enough to cover boundary and no MET_BDY_3D will be used
