@@ -1636,7 +1636,7 @@ C Read the various categories of normalized emissions
              MESG = 'Could not read "' // TRIM( vname ) //
      &              '" from file "' // TRIM( E2C_CHEM ) // '"'
 !             CALL M3EXIT( PNAME, 0, 0, MESG, XSTAT2 )
-             L1_SW_AVAIL = .false. ! Fest-C run does not have L1_SW (for ABFLUX)
+             L1_SW_AVAIL = .false. ! Fest-C run may not have L1_SW (for ABFLUX)
           End If
 
           vname = 'L2_SW'
@@ -1644,7 +1644,7 @@ C Read the various categories of normalized emissions
      &                        STRTCOLSTD, ENDCOLSTD, cio_model_sdate, 0, wep2)) Then
              MESG = 'Could not read "' // TRIM( vname ) //
      &              '" from file "' // TRIM( E2C_CHEM ) // '"'
-             CALL M3EXIT( PNAME, 0, 0, MESG, XSTAT2 )
+!             CALL M3EXIT( PNAME, 0, 0, MESG, XSTAT2 ) ! Fest-C run may also not have L2_SW
           End If
 
           vname = 'L2_DEP'
