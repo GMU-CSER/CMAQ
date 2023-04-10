@@ -846,6 +846,7 @@ C Includes:
       INTEGER :: LTOP, LACRESBURNED
 C ++ FIRE PLUME RISE OPTION ++
       CHARACTER(  1 ) ::     PLMRISE_OPT   
+      CHARACTER(  1 ) ::     FRP_OPT
 C PlumeRise option (1-Briggs; 2-Sofiev)
 C -- lyy & qt 2020.06
       INTERFACE
@@ -963,24 +964,38 @@ C ++ FIRE PLUME RISE OPTION ++
          PLMRISE_OPT = '1'
          call getenv('PLMRISE_OPT',PLMRISE_OPT)
 
-         IF (PLMRISE_OPT == '1') THEN
+         FRP_OPT = '0'
+         call getenv('FRP_OPT',FRP_OPT)
+
+         IF (FRP_OPT == '0') THEN
 C Briggs
-            call interpolate_var (STKENAME(N), 'FRP', LOC_STKDATE, JTIME, FIREVAR(N)%ARRY)
+            call interpolate_var (STKENAME(N), 'HFLUX', 
+     &                       LOC_STKDATE, JTIME, FIREVAR(N)%ARRY)
 
             DO S = 1, MY_NSRC( N )
                SRC = SOURCE( N )%ARRY( S )
+               IF (PLMRISE_OPT == '1') THEN
 C convert MW to BTU/s 1mw=947.82 btu/s
 C convert BTU/s to m**4/s**3
-               BFLUX(N)%ARRY(S)=FIREVAR(N)%ARRY(SRC)*947.82*BTU2M4PS3*10
+                  BFLUX(N)%ARRY(S)=FIREVAR(N)%ARRY(SRC)*947.82*BTU2M4PS3
+               ELSE
+                  BFLUX( N )%ARRY( S ) = FIREVAR( N )%ARRY( SRC )*1e5
+               END IF
             END DO
          ELSE
 C IF (PLMRISE_OPT == '2') THEN
 C Sofiev 2012
-            call interpolate_var (STKENAME(N), 'FRP', LOC_STKDATE,JTIME, FIREVAR(N)%ARRY)
+            call interpolate_var (STKENAME(N), 'FRP',
+     &                       LOC_STKDATE,JTIME, FIREVAR(N)%ARRY)
 
             DO S = 1, MY_NSRC( N )
                SRC = SOURCE( N )%ARRY( S )
-               BFLUX( N )%ARRY( S ) = FIREVAR( N )%ARRY( SRC )*1e6
+               IF (PLMRISE_OPT == '1') THEN
+                  BFLUX(N)%ARRY(S)=FIREVAR(N)%ARRY(SRC)*947.82*BTU2M4PS3
+     &                             *10
+               ELSE
+                  BFLUX( N )%ARRY( S ) = FIREVAR( N )%ARRY( SRC )*1e6
+               END IF
             END DO
          END IF
 C -- lyy & qt 2020.06
