@@ -185,6 +185,7 @@ setenv EMIS_SYM_DATE N       #> Master switch for allowing CMAQ to use the date 
                              #>   may switch the behavior for individual emission files below using the variables:
                              #>       GR_EM_SYM_DATE_## | STK_EM_SYM_DATE_## [default: N]
 setenv PLMRISE_OPT 1         #> GMU Fire Plume Rise Options:  1 for default Briggs, 2 for Sofiev, 3 for Freitas.
+setenv FRP_OPT 0             # 0: HFLUX; 1: FRP
 
 #> Diagnostic Output Flags
 setenv CTM_CKSUM Y           #> checksum report [ default: Y ]
