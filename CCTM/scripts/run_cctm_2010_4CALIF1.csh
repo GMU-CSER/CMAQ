@@ -188,7 +188,6 @@ setenv EMIS_SYM_DATE N       #> Master switch for allowing CMAQ to use the date 
 setenv PLMRISE_OPT 1         #> GMU Fire Plume Rise Options:  1 for default Briggs, 2 for Sofiev, 3 for Freitas.
 setenv FRP_OPT 0             # 0: HFLUX; 1: FRP
 
-
 #> Diagnostic Output Flags
 setenv CTM_CKSUM Y           #> checksum report [ default: Y ]
 setenv CLD_DIAG N            #> cloud diagnostic file [ default: N ]
