@@ -98,8 +98,8 @@ C Local variables:
       REAL    EDYZ
       REAL    ZFL                    ! local ZF
       REAL    ZCAN, TLCAN, HOL, SIGMACAN, EDDYVEST1, EDDYVEST_INT  ! local canopy parameters
-      REAL    RRCAN, AACAN, BBCAN
-      INTEGER COUNTCAN
+      REAL    BOTCAN, RRCAN, AACAN, BBCAN
+      INTEGER COUNTCAN,KCAN
 
       REAL, PARAMETER :: PICAN = 3.1415927 ! Declare local constant Pi
       INTEGER, PARAMETER :: MAXCAN = 1000 ! Declare local maximum canopy layers
@@ -225,7 +225,22 @@ C Capture the col, row, lvl, and EDDYV for the global min DT
 
          IF ( CANOPY_SHADE ) THEN ! compute canopy effects on vertical diffusivity
                             !conditions for grid cells that do NOT have a continuous forest canopy
-          IF (L .EQ. 1) THEN !first model layer
+
+                IF (L .EQ. 1) THEN !first model layer
+                  KCAN = 1
+                ELSE               !check subsequent model layers
+                   IF (  Met_Data%FCH( C,R ) .GT. Met_Data%ZF( C,R,L-1 )
+     &             .AND. Met_Data%FCH( C,R ) .LE. Met_Data%ZF( C,R,L ) ) THEN
+                     KCAN = 1
+                  ELSE
+                     KCAN = 0
+                  END IF
+                END IF
+
+          IF (KCAN .EQ. 1) THEN !canopy could be inside model layer
+                  !check for other conditions for grid cells that do NOT have
+                  !a continuos forest canopy
+
            IF ( Met_Data%LAIE( C,R ) .LT. 0.1
 !     &        .OR. Met_Data%FCH( C,R ) .LT. 0.5
      &        .OR. Met_Data%FCH( C,R ) .LT. 10.0
@@ -243,7 +258,14 @@ C Capture the col, row, lvl, and EDDYV for the global min DT
               COUNTCAN = 0  ! Initialize canopy layers
 !              WRITE(*,*) 'EDDYV_NO_CANOPY = ', EDDYV( C,R,L ) 
 
-              DO WHILE (ZCAN.GE.0.5)  !canopy threshold >= 0.5 m
+               IF (L .EQ. 1) THEN  !Find bottom in each model layer
+                   BOTCAN = 0.5
+               ELSE
+                   BOTCAN = Met_Data%ZF( C,R,L-1 )
+               END IF
+
+
+              DO WHILE (ZCAN .GE. BOTCAN)  !canopy threshold >= 0.5 m
                  ! TLCAN = Lagrangian timescale
                  TLCAN = (Met_Data%FCH( C,R )/Met_Data%USTAR( C,R )) * (
      &                   (0.256 * (ZCAN-(0.75*Met_Data%FCH( C,R )))/Met_Data%FCH( C,R ) ) +
@@ -317,7 +339,7 @@ C Capture the col, row, lvl, and EDDYV for the global min DT
 !              WRITE(*,*) 'EDDYV_CANOPY = ', EDDYV( C,R,L )
 
            END IF !contigous canopy conditions
-          END IF  ! first model layer
+          END IF  !model layer contains canopy
          END IF   !canopy effects switch
 
 211   CONTINUE       !  end loop on columns

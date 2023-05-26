@@ -323,7 +323,8 @@ C...modules
       REAL, ALLOCATABLE       :: RJ_CORRX ( : )        ! canopy height dependent photolysis attenuation factor
       REAL                    :: XCAN     ( 2 )        ! canopy height interpolation bounds
       REAL                    :: YCAN     ( 2 )        ! photolysis attenuation interpolation bounds
-      REAL ZFL, ZCAN, COUNTCAN, XCANOUT                ! local canopy variables
+      REAL ZFL, ZCAN, XCANOUT, BOTCAN                  ! local canopy variables
+      INTEGER                 :: COUNTCAN, KCAN        ! local canopy variables 
       INTEGER, PARAMETER      :: MAXCAN = 1000         ! Declare local maximum canopy layers
 
       INTERFACE
@@ -1147,8 +1148,25 @@ C...modules
 !Makar, P., Staebler, R., Akingunola, A. et al. The effects of forest canopy shading and turbulence on boundary layer ozone.
 !Nat Commun 8, 15243 (2017). https://doi.org/10.1038/ncomms15243
 
-                     IF ( CANOPY_SHADE ) THEN ! compute canopy shade reduction factor (RJ_CORR)
-                            !conditions for grid cells that do NOT have a continuous forest canopy
+                      IF ( CANOPY_SHADE ) THEN ! compute canopy shade reduction factor (RJ_CORR)
+
+                        DO LEV = 1, NLAYS !loop through model layers
+
+                          IF (LEV .EQ. 1) THEN !first model layer
+                            KCAN = 1
+                          ELSE               !check subsequent model layers
+                            IF (  Met_Data%FCH( COL,ROW ) .GT. Met_Data%ZF( COL,ROW,LEV-1 )
+     &                      .AND. Met_Data%FCH( COL,ROW ) .LE. Met_Data%ZF( COL,ROW,LEV ) ) THEN
+                              KCAN = 1
+                            ELSE
+                              KCAN = 0
+                            END IF
+                          END IF
+
+                          IF (KCAN .EQ. 1) THEN !canopy could be inside model layer
+                            !check for other conditions for grid cells that do NOT have
+                            !a continuos forest canopy
+
                             IF ( Met_Data%LAIE( COL,ROW ) .LT. 0.1
 !     &                         .OR. Met_Data%FCH( COL,ROW ) .LT. 0.5
      &                         .OR. Met_Data%FCH( COL,ROW ) .LT. 10.0
@@ -1175,10 +1193,17 @@ C...modules
 
 !Interpolate to get attenuation profile below canopy
                                 ZFL = Met_Data%ZF( COL,ROW,1 )
-!                                ZCAN = ZFL    ! Initialize canopy top (m) = First model layer above canopy
-                                ZCAN =  Met_Data%FCH( COL,ROW ) ! Initialize canopy top (m) = Top of canopy
+                                ZCAN = ZFL    ! Initialize canopy top (m) = First model layer above canopy
+!                                ZCAN =  Met_Data%FCH( COL,ROW ) ! Initialize canopy top (m) = Top of canopy
                                 COUNTCAN = 0  ! Initialize canopy layers
-                                DO WHILE (ZCAN.GE.0.5)  !canopy threshold >= 0.5 m
+
+                                IF (LEV .EQ. 1) THEN  !Find bottom in each model layer
+                                    BOTCAN = 0.5
+                                ELSE
+                                    BOTCAN = Met_Data%ZF( COL,ROW,LEV-1 )
+                                END IF
+
+                                DO WHILE (ZCAN .GE. BOTCAN)  !canopy threshold >= 0.5 m
                                    IF ( ZCAN .GT. Met_Data%FCH( COL,ROW ) ) THEN  
                                      COUNTCAN = COUNTCAN + 1 
                                      ZCANX(COUNTCAN) = ZCAN 
@@ -1252,6 +1277,8 @@ C...modules
 !                                RJ( COL,ROW, 1, : ) = ( RJ( COL,ROW, 1, : )
 !     &                                            + (RJ( COL,ROW, 1, : )*RJ_CORR( COL,ROW )) )/2.0
                             END IF !contigous canopy conditions
+                           END IF  !canopy height could be inside model layer
+                          END DO  !end loop on model layers
                      END IF        !canopy shade 
 !--------------------------------------------------------------------------------------------------------------------------
 
