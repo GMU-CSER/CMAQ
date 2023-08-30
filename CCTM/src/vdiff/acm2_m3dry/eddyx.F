@@ -242,8 +242,8 @@ C Capture the col, row, lvl, and EDDYV for the global min DT
                   !a continuos forest canopy
 
            IF ( Met_Data%LAIE( C,R ) .LT. 0.1
-!     &        .OR. Met_Data%FCH( C,R ) .LT. 0.5
-     &        .OR. Met_Data%FCH( C,R ) .LT. 10.0
+     &        .OR. Met_Data%FCH( C,R ) .LT. 0.5
+!     &        .OR. Met_Data%FCH( C,R ) .LT. 10.0
      &        .OR. MAX(0.0, 1.0 - Met_Data%FRT( C,R )) .GT. 0.5
      &        .OR. Met_Data%POPU( C,R ) .GT. 10000.0
      &        .OR. EXP(-0.5*Met_Data%LAIE( C,R )*Met_Data%CLU( C,R )) .GT. 0.45
