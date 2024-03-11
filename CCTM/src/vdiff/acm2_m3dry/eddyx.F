@@ -246,8 +246,8 @@ C Capture the col, row, lvl, and EDDYV for the global min DT
      &        .OR. Met_Data%FCH( C,R ) .LT. 10.0
      &        .OR. MAX(0.0, 1.0 - Met_Data%FRT( C,R )) .GT. 0.5
      &        .OR. Met_Data%POPU( C,R ) .GT. 10000.0
-     &        .OR. EXP(-0.5*Met_Data%LAIE( C,R )*Met_Data%CLU( C,R )) .GT. 0.45
-     &                                               .AND. Met_Data%FCH( C,R ) .LT. 18.0 ) THEN
+     &        .OR. (EXP(-0.5*Met_Data%LAIE( C,R )*Met_Data%CLU( C,R )) .GT. 0.45
+     &                                               .AND. Met_Data%FCH( C,R ) .LT. 18.0 )) THEN
               EDDYV( C,R,L ) = EDDYV( C,R,L )
            ELSE ! There is a contiguous forest canopy, apply correctoin over canopy layers
                 !Raupauch M. R. A Practical Lagrangian method for relating scalar concentrations to 
